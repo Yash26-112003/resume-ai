@@ -2,65 +2,76 @@
 <html>
 <head>
     <title>AI Resume Screening</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f4f6f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    <!DOCTYPE html>
 
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 400px;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
+<html>
+<head>
+    <title>AI Resume Screening</title>
 
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+```
+<style>
+    body {
+        font-family: Arial;
+        background: #f4f6f8;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
 
-        .score {
-            font-size: 24px;
-            font-weight: bold;
-            color: green;
-        }
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        width: 400px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
 
-        .skills span {
-            background: #e0f3ff;
-            padding: 5px 10px;
-            margin: 3px;
-            display: inline-block;
-            border-radius: 5px;
-        }
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
 
-        .missing span {
-            background: #ffe0e0;
-        }
+    .score {
+        font-size: 22px;
+        font-weight: bold;
+        color: green;
+        margin-top: 10px;
+    }
 
-        .bar {
-            width: 100%;
-            background: #ddd;
-            border-radius: 10px;
-            margin-top: 10px;
-        }
+    .bar {
+        width: 100%;
+        background: #ddd;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
 
-        .fill {
-            height: 10px;
-            background: green;
-            border-radius: 10px;
-        }
-    </style>
+    .fill {
+        height: 10px;
+        background: green;
+        border-radius: 10px;
+        width: 0%;
+    }
+
+    .skills span {
+        background: #e0f3ff;
+        padding: 5px 10px;
+        margin: 3px;
+        display: inline-block;
+        border-radius: 5px;
+    }
+
+    .missing span {
+        background: #ffe0e0;
+    }
+</style>
+```
+
 </head>
 
 <body>
@@ -68,53 +79,66 @@
 <div class="card">
     <h2>AI Resume Screening</h2>
 
-    <input type="file" id="resume"><br><br>
-    <button onclick="upload()">Upload & Analyze</button>
+```
+<input type="file" id="resume"><br><br>
 
-    <h3 id="role"></h3>
-    <div class="score" id="score"></div>
+<button onclick="uploadResume()">Upload & Analyze</button>
 
-    <div class="bar">
-        <div class="fill" id="barFill"></div>
-    </div>
+<h3 id="role"></h3>
+<div class="score" id="score"></div>
 
-    <h4>Matched Skills</h4>
-    <div class="skills" id="matched"></div>
+<div class="bar">
+    <div class="fill" id="barFill"></div>
+</div>
 
-    <h4>Missing Skills</h4>
-    <div class="skills missing" id="missing"></div>
+<h4>Matched Skills</h4>
+<div class="skills" id="matched"></div>
+
+<h4>Missing Skills</h4>
+<div class="skills missing" id="missing"></div>
+```
+
 </div>
 
 <script>
-async function upload() {
-    const file = document.getElementById("resume").files[0];
+async function uploadResume() {
 
-    let formData = new FormData();
+    const fileInput = document.getElementById("resume");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select a file first");
+        return;
+    }
+
+    const formData = new FormData();
     formData.append("resume", file);
 
-    let res = await fetch("http://127.0.0.1:5000/upload", {
-        method: "POST",
-        body: formData
-    });
+    document.getElementById("score").innerText = "Uploading...";
 
-    let data = await res.json();
+    try {
+        const response = await fetch("https://YOUR-ACTUAL-RENDER-URL.onrender.com/upload", {
+            method: "POST",
+            body: formData
+        });
 
-    document.getElementById("score").innerText = "Score: " + data.score + "%";
-    document.getElementById("role").innerText = "Best Role: " + data.best_role;
+        const data = await response.json();
 
-    document.getElementById("barFill").style.width = data.score + "%";
+        document.getElementById("score").innerText = "Score: " + data.score;
+        document.getElementById("role").innerText = "Role: " + data.role;
 
-    let matchedHTML = "";
-    data.matched_skills.forEach(s => {
-        matchedHTML += `<span>${s}</span>`;
-    });
-    document.getElementById("matched").innerHTML = matchedHTML;
+        document.getElementById("matched").innerHTML =
+            data.matched_skills.map(skill => `<span>${skill}</span>`).join("");
 
-    let missingHTML = "";
-    data.missing_skills.forEach(s => {
-        missingHTML += `<span>${s}</span>`;
-    });
-    document.getElementById("missing").innerHTML = missingHTML;
+        document.getElementById("missing").innerHTML =
+            data.missing_skills.map(skill => `<span>${skill}</span>`).join("");
+
+        document.getElementById("barFill").style.width = data.score + "%";
+
+    } catch (error) {
+        document.getElementById("score").innerText = "Error: Server not responding";
+        console.error(error);
+    }
 }
 </script>
 
