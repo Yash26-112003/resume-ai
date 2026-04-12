@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume Screening</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: green;
+        }
+
+        .skills span {
+            background: #e0f3ff;
+            padding: 5px 10px;
+            margin: 3px;
+            display: inline-block;
+            border-radius: 5px;
+        }
+
+        .missing span {
+            background: #ffe0e0;
+        }
+
+        .bar {
+            width: 100%;
+            background: #ddd;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .fill {
+            height: 10px;
+            background: green;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>AI Resume Screening</h2>
+
+    <input type="file" id="resume"><br><br>
+    <button onclick="upload()">Upload & Analyze</button>
+
+    <h3 id="role"></h3>
+    <div class="score" id="score"></div>
+
+    <div class="bar">
+        <div class="fill" id="barFill"></div>
+    </div>
+
+    <h4>Matched Skills</h4>
+    <div class="skills" id="matched"></div>
+
+    <h4>Missing Skills</h4>
+    <div class="skills missing" id="missing"></div>
+</div>
+
+<script>
+async function upload() {
+    const file = document.getElementById("resume").files[0];
+
+    let formData = new FormData();
+    formData.append("resume", file);
+
+    let res = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData
+    });
+
+    let data = await res.json();
+
+    document.getElementById("score").innerText = "Score: " + data.score + "%";
+    document.getElementById("role").innerText = "Best Role: " + data.best_role;
+
+    document.getElementById("barFill").style.width = data.score + "%";
+
+    let matchedHTML = "";
+    data.matched_skills.forEach(s => {
+        matchedHTML += `<span>${s}</span>`;
+    });
+    document.getElementById("matched").innerHTML = matchedHTML;
+
+    let missingHTML = "";
+    data.missing_skills.forEach(s => {
+        missingHTML += `<span>${s}</span>`;
+    });
+    document.getElementById("missing").innerHTML = missingHTML;
+}
+</script>
+
+</body>
+</html>
