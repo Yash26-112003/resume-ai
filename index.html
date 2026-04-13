@@ -1,139 +1,150 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>AI Resume Analyzer</title>
-
-<style>
-body {
-    font-family: Arial;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-.container {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    width: 400px;
-    text-align: center;
-}
-button {
-    padding: 10px;
-    background: #667eea;
-    color: white;
-    border: none;
-}
-.progress {
-    background: #eee;
-    height: 10px;
-}
-.progress-bar {
-    background: green;
-    height: 10px;
-    width: 0%;
-}
-.loader {
-    display: none;
-}
-</style>
-
+    <title>AI Resume Analyzer</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #5f9cff, #8a63d2);
+            text-align: center;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            width: 350px;
+            margin: 50px auto;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background: #5f9cff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #bar {
+            width: 100%;
+            background: #ddd;
+            height: 10px;
+            margin-top: 10px;
+        }
+        #barFill {
+            height: 10px;
+            width: 0%;
+            background: green;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="container">
-<h2>🚀 AI Resume Analyzer</h2>
+<div class="card">
+    <h2>🚀 AI Resume Analyzer</h2>
 
-<select id="roleSelect">
-<option value="software">Software</option>
-<option value="data">Data</option>
-<option value="web">Web</option>
-</select>
+    <select id="roleSelect">
+        <option value="software">Software</option>
+        <option value="data">Data</option>
+        <option value="web">Web</option>
+    </select>
 
-<br><br>
+    <br><br>
 
-<input type="file" id="resume">
+    <input type="file" id="resume">
 
-<br><br>
+    <br><br>
 
-<textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
+    <textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
 
-<br><br>
+    <br>
 
-<button onclick="uploadResume()">Analyze Resume</button>
+    <button onclick="uploadResume()">Analyze Resume</button>
 
-<div id="loader">🔄 Loading...</div>
+    <h3 id="score"></h3>
 
-<h3 id="score"></h3>
+    <div id="bar"><div id="barFill"></div></div>
 
-<div class="progress">
-<div id="barFill" class="progress-bar"></div>
-</div>
+    <h4 id="roleText"></h4>
 
-<p id="roleText"></p>
+    <h3>ATS Breakdown</h3>
+    <p>Skill Match: <span id="skillScore"></span>%</p>
+    <p>JD Similarity: <span id="simScore"></span>%</p>
 
-<h4>Matched</h4>
-<div id="matched"></div>
+    <h3>Matched Skills</h3>
+    <ul id="matched"></ul>
 
-<h4>Missing</h4>
-<div id="missing"></div>
+    <h3>Missing Skills</h3>
+    <ul id="missing"></ul>
 
-<h4>Feedback</h4>
-<div id="feedback"></div>
+    <h3>Suggestions</h3>
+    <ul id="suggestions"></ul>
 
+    <h3>Feedback</h3>
+    <p id="feedback"></p>
 </div>
 
 <script>
-
 async function uploadResume() {
 
-    const file = document.getElementById("resume").files[0];
-    const role = document.getElementById("roleSelect").value;
+    const fileInput = document.getElementById("resume");
+    const roleElement = document.getElementById("roleSelect");
+    const role = roleElement ? roleElement.value : "software";
     const jobDesc = document.getElementById("jobDesc").value;
 
+    const file = fileInput.files[0];
+
     if (!file) {
-        alert("Select file");
+        alert("Please select a file");
         return;
     }
-
-    document.getElementById("loader").style.display = "block";
 
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
     formData.append("job_desc", jobDesc);
 
+    document.getElementById("score").innerText = "Analyzing...";
+
     try {
-        const res = await fetch("https://resume-ai-htmi.onrender.com/upload", {
+        const response = await fetch("https://resume-ai-html.onrender.com/upload", {
             method: "POST",
             body: formData
         });
 
-        const data = await res.json();
-
-        document.getElementById("loader").style.display = "none";
+        const data = await response.json();
 
         document.getElementById("score").innerText = "Score: " + data.score + "%";
         document.getElementById("roleText").innerText = data.role;
 
-        document.getElementById("barFill").style.width = data.score + "%";
+        // ✅ Bar color
+        const bar = document.getElementById("barFill");
+        bar.style.width = data.score + "%";
 
+        if (data.score > 70) bar.style.background = "green";
+        else if (data.score > 40) bar.style.background = "orange";
+        else bar.style.background = "red";
+
+        // ✅ Lists
         document.getElementById("matched").innerHTML =
-            data.matched_skills.join("<br>");
+            data.matched_skills.map(s => `<li>${s}</li>`).join("");
 
         document.getElementById("missing").innerHTML =
-            data.missing_skills.join("<br>");
+            data.missing_skills.map(s => `<li>${s}</li>`).join("");
 
-        document.getElementById("feedback").innerHTML =
-            data.feedback.join("<br>");
+        document.getElementById("suggestions").innerHTML =
+            data.suggestions.map(s => `<li>${s}</li>`).join("");
 
-    } catch {
-        alert("Server error");
+        // ✅ Scores
+        document.getElementById("skillScore").innerText = data.skill_score;
+        document.getElementById("simScore").innerText = data.similarity_score;
+
+        // ✅ Feedback
+        document.getElementById("feedback").innerText = data.feedback;
+
+    } catch (err) {
+        document.getElementById("score").innerText = "Server Error ❌";
     }
 }
-
 </script>
 
 </body>
