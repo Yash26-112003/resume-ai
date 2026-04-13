@@ -1,7 +1,3 @@
-@app.route("/")
-def home():
-    return "🚀 AI Resume Backend Running!"
-
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
@@ -13,6 +9,9 @@ from fpdf import FPDF
 app = Flask(__name__)
 CORS(app)
 
+@app.route("/")
+def home():
+    return "🚀 AI Resume Backend Running!"
 # ================= PDF TEXT =================
 def extract_text(file):
     try:
