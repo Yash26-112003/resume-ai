@@ -10,7 +10,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-return "Backend Running!"
+    return "Backend Running!"
 
 # 📄 Extract text from PDF
 
