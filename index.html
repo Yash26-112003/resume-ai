@@ -122,8 +122,8 @@
 async function uploadResume() {
 
     const fileInput = document.getElementById("resume");
-    const roleElement = document.getElementById("roleSelect");
-    const role = roleElement ? roleElement.value : "software";
+    const role = document.getElementById("roleSelect").value;
+    const jobDesc = document.getElementById("jobDesc").value;
 
     const file = fileInput.files[0];
 
@@ -135,6 +135,7 @@ async function uploadResume() {
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
+    formData.append("job_desc", jobDesc);
 
     document.getElementById("score").innerText = "Analyzing...";
     document.getElementById("loader").style.display = "block";
@@ -144,6 +145,38 @@ async function uploadResume() {
             method: "POST",
             body: formData
         });
+
+        const data = await response.json();
+
+        document.getElementById("loader").style.display = "none";
+
+        document.getElementById("score").innerText = "Score: " + data.score;
+        document.getElementById("roleText").innerText = "Role: " + data.role;
+
+        document.getElementById("barFill").style.width = data.score + "%";
+
+        // MATCHED
+        document.getElementById("matched").innerHTML =
+            data.matched_skills.map(s => `<span>${s}</span>`).join("");
+
+        // MISSING
+        document.getElementById("missing").innerHTML =
+            data.missing_skills.map(s => `<span>${s}</span>`).join("");
+
+        // 🔥 NEW: BREAKDOWN
+        document.getElementById("breakdown").innerHTML =
+            `Skill Match: ${data.skill_score}% <br>
+             JD Similarity: ${data.similarity_score}%`;
+
+        // 🔥 NEW: SUGGESTIONS
+        document.getElementById("suggestions").innerHTML =
+            data.suggestions.map(s => `<div>👉 ${s}</div>`).join("");
+
+    } catch (err) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("score").innerText = "Server Error ❌";
+    }
+}
 
         const data = await response.json();
 
