@@ -80,14 +80,16 @@ if similarity_score < 0.5:
 if final_score < 50:
     suggestions.append("Add more relevant experience and keywords")
 
-    return jsonify({
-        "role": role_name,
-        "score": final_score,
-        "matched_skills": matched,
-        "missing_skills": missing,
-        "similarity": round(similarity_score * 100, 2),
-        "suggestions": suggestions
-    })
+   return jsonify({
+    "role": role_name,
+    "score": final_score,
+    "matched_skills": matched,
+    "missing_skills": missing,
+    "similarity": round(similarity_score * 100, 2),
+    "suggestions": suggestions,
+    "skill_score": int(skill_score * 100),
+    "similarity_score": int(similarity_score * 100)
+})
 
 # ✅ IMPORTANT for Render
 if __name__ == "__main__":
