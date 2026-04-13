@@ -66,7 +66,19 @@ def upload():
     final_score = int((skill_score * 0.6 + similarity_score * 0.4) * 100)
 
     # 💡 Suggestions
-    suggestions = [f"Learn {s}" for s in missing]
+   suggestions = []
+
+if missing:
+    suggestions.append("Improve missing technical skills")
+
+for s in missing:
+    suggestions.append(f"Add {s} projects to your resume")
+
+if similarity_score < 0.5:
+    suggestions.append("Resume not aligned with job description")
+
+if final_score < 50:
+    suggestions.append("Add more relevant experience and keywords")
 
     return jsonify({
         "role": role_name,
