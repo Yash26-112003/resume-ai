@@ -138,12 +138,14 @@
 </div>
 
 <script>
+<script>
 async function uploadResume() {
 
     const fileInput = document.getElementById("resume");
+
+    // ✅ SAFE FIX HERE
     const roleElement = document.getElementById("roleSelect");
     const role = roleElement ? roleElement.value : "software";
-    const jobDesc = document.getElementById("jobDesc").value;
 
     const file = fileInput.files[0];
 
@@ -155,7 +157,10 @@ async function uploadResume() {
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
-    formData.append("job_desc", jobDesc);
+
+    // rest of your code...
+}
+</script>
 
     // 🔄 SHOW LOADER
     document.getElementById("score").innerText = "Analyzing Resume...";
