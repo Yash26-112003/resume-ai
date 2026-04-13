@@ -141,7 +141,8 @@
 async function uploadResume() {
 
     const fileInput = document.getElementById("resume");
-    const role = document.getElementById("roleSelect").value;
+    const roleElement = document.getElementById("roleSelect");
+    const role = roleElement ? roleElement.value : "software";
     const jobDesc = document.getElementById("jobDesc").value;
 
     const file = fileInput.files[0];
