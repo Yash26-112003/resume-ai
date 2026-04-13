@@ -87,8 +87,7 @@
 async function uploadResume() {
 
     const fileInput = document.getElementById("resume");
-    const roleElement = document.getElementById("roleSelect");
-    const role = roleElement ? roleElement.value : "software";
+    const role = document.getElementById("roleSelect").value;
     const jobDesc = document.getElementById("jobDesc").value;
 
     const file = fileInput.files[0];
@@ -103,20 +102,26 @@ async function uploadResume() {
     formData.append("role", role);
     formData.append("job_desc", jobDesc);
 
-    document.getElementById("score").innerText = "Analyzing...";
+    // ✅ Loader
+    document.getElementById("score").innerText = "Analyzing... ⏳";
 
     try {
-        const response = await fetch("https://resume-ai-html.onrender.com/upload", {
+        const response = await fetch("https://YOUR-BACKEND-URL.onrender.com/upload", {
             method: "POST",
             body: formData
         });
 
+        if (!response.ok) {
+            throw new Error("Server not responding");
+        }
+
         const data = await response.json();
 
+        // ✅ Score
         document.getElementById("score").innerText = "Score: " + data.score + "%";
         document.getElementById("roleText").innerText = data.role;
 
-        // ✅ Bar color
+        // ✅ Bar
         const bar = document.getElementById("barFill");
         bar.style.width = data.score + "%";
 
@@ -134,7 +139,7 @@ async function uploadResume() {
         document.getElementById("suggestions").innerHTML =
             data.suggestions.map(s => `<li>${s}</li>`).join("");
 
-        // ✅ Scores
+        // ✅ Breakdown
         document.getElementById("skillScore").innerText = data.skill_score;
         document.getElementById("simScore").innerText = data.similarity_score;
 
@@ -142,7 +147,8 @@ async function uploadResume() {
         document.getElementById("feedback").innerText = data.feedback;
 
     } catch (err) {
-        document.getElementById("score").innerText = "Server Error ❌";
+        console.error(err);
+        document.getElementById("score").innerText = "Backend not responding ❌";
     }
 }
 </script>
