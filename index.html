@@ -138,12 +138,10 @@
 </div>
 
 <script>
-<script>
 async function uploadResume() {
 
     const fileInput = document.getElementById("resume");
 
-    // ✅ SAFE FIX HERE
     const roleElement = document.getElementById("roleSelect");
     const role = roleElement ? roleElement.value : "software";
 
@@ -158,7 +156,36 @@ async function uploadResume() {
     formData.append("resume", file);
     formData.append("role", role);
 
-    // rest of your code...
+    // Loader
+    document.getElementById("score").innerText = "Analyzing Resume...";
+    document.getElementById("loader").style.display = "block";
+
+    try {
+        const response = await fetch("https://resume-ai-htmi.onrender.com/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        document.getElementById("loader").style.display = "none";
+
+        document.getElementById("score").innerText = "Score: " + data.score;
+        document.getElementById("roleText").innerText = "Role: " + data.role;
+
+        document.getElementById("barFill").style.width = data.score + "%";
+
+        document.getElementById("matched").innerHTML =
+            data.matched_skills.map(s => `<span>${s}</span>`).join("");
+
+        document.getElementById("missing").innerHTML =
+            data.missing_skills.map(s => `<span>${s}</span>`).join("");
+
+    } catch (err) {
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("score").innerText = "Server Error ❌";
+        console.error(err);
+    }
 }
 </script>
 
