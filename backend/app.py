@@ -8,12 +8,11 @@ import PyPDF2
 app = Flask(__name__)
 CORS(app)
 
-# ✅ Home route
 @app.route('/')
 def home():
     return "Backend Running!"
 
-# ✅ Extract text from PDF
+# ✅ Extract text
 def extract_text(file):
     try:
         pdf = PyPDF2.PdfReader(file)
@@ -37,7 +36,7 @@ def upload():
 
         resume_text = extract_text(file)
 
-        # 🎯 Role-based skills
+        # 🎯 Role skills
         if role == "software":
             skills = ["python", "flask", "sql", "api"]
             role_name = "Software Engineer"
@@ -54,11 +53,10 @@ def upload():
             skills = []
             role_name = "Unknown"
 
-        # ✅ Matching
         matched = [s for s in skills if s in resume_text]
         missing = [s for s in skills if s not in resume_text]
 
-        # ✅ Similarity (JD vs Resume)
+        # ✅ Similarity
         similarity_score = 0
         if job_desc:
             docs = [resume_text, job_desc]
@@ -72,13 +70,13 @@ def upload():
         # ✅ Suggestions
         suggestions = [f"Learn {s}" for s in missing]
 
-        # ✅ AI Feedback
+        # ✅ Feedback
         if final_score > 80:
             feedback = "Excellent resume! You're job ready 🚀"
         elif final_score > 60:
             feedback = "Good resume. Improve missing skills."
         else:
-            feedback = "Resume needs significant improvement. Add projects related to missing skills."
+            feedback = "Resume needs improvement. Add projects for missing skills."
 
         return jsonify({
             "role": role_name,
@@ -93,6 +91,7 @@ def upload():
         })
 
     except Exception as e:
+        print("ERROR:", e)  # 🔥 DEBUG
         return jsonify({"error": str(e)}), 500
 
 
