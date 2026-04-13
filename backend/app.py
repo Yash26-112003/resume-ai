@@ -8,6 +8,7 @@ import PyPDF2
 app = Flask(__name__)
 CORS(app)
 
+# ✅ Test route
 @app.route('/')
 def home():
     return "Backend Running!"
@@ -36,7 +37,7 @@ def upload():
 
         resume_text = extract_text(file)
 
-        # 🎯 Role skills
+        # 🎯 Role-based skills
         if role == "software":
             skills = ["python", "flask", "sql", "api"]
             role_name = "Software Engineer"
@@ -53,6 +54,7 @@ def upload():
             skills = []
             role_name = "Unknown"
 
+        # ✅ Matching
         matched = [s for s in skills if s in resume_text]
         missing = [s for s in skills if s not in resume_text]
 
@@ -83,7 +85,6 @@ def upload():
             "score": final_score,
             "matched_skills": matched,
             "missing_skills": missing,
-            "similarity": round(similarity_score * 100, 2),
             "suggestions": suggestions,
             "skill_score": int(skill_score * 100),
             "similarity_score": int(similarity_score * 100),
@@ -91,7 +92,7 @@ def upload():
         })
 
     except Exception as e:
-        print("ERROR:", e)  # 🔥 DEBUG
+        print("ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
 
