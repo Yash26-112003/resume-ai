@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import PyPDF2
 
-app = Flask(**name**)
+app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
