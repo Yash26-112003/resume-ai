@@ -1,193 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>AI Resume Analyzer</title>
 
 <style>
 body {
+    margin:0;
     font-family: Arial;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    background: linear-gradient(135deg,#6a11cb,#2575fc);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-/* Glass Effect */
-.card {
-    backdrop-filter: blur(15px);
+.container {
+    backdrop-filter: blur(20px);
     background: rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 30px;
-    width: 350px;
-    text-align: center;
-    color: white;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    padding:30px;
+    border-radius:20px;
+    width:350px;
+    text-align:center;
+    color:white;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+
+input,select,textarea,button {
+    width:100%;
+    margin:10px 0;
+    padding:10px;
+    border-radius:10px;
+    border:none;
 }
 
 button {
-    background: linear-gradient(90deg,#00c6ff,#0072ff);
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
+    background:#00c6ff;
+    color:white;
+    cursor:pointer;
 }
 
 .progress {
-    width: 100%;
-    background: #ddd;
-    height: 10px;
-    border-radius: 10px;
-    margin-top: 10px;
+    height:10px;
+    background:#ccc;
+    border-radius:10px;
+    overflow:hidden;
 }
 
-#barFill {
-    height: 10px;
-    width: 0%;
-    background: green;
-    border-radius: 10px;
+.bar {
+    height:100%;
+    width:0%;
+    background:lime;
 }
+
 </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="container">
 
 <h2>🚀 AI Resume Analyzer</h2>
 
-<select id="roleSelect">
-    <option value="software">Software</option>
-    <option value="data">Data</option>
-    <option value="web">Web</option>
+<select id="role">
+<option value="software">Software</option>
+<option value="data">Data</option>
+<option value="web">Web</option>
 </select>
 
-<br><br>
-
 <input type="file" id="resume">
+<textarea id="job_desc" placeholder="Paste Job Description"></textarea>
 
-<br><br>
+<button onclick="analyze()">Analyze</button>
 
-<textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
+<h3 id="status"></h3>
 
-<br><br>
+<div class="progress"><div class="bar" id="bar"></div></div>
 
-<button onclick="uploadResume()">Analyze Resume</button>
+<p id="score"></p>
+<p id="skillScore"></p>
+<p id="jdScore"></p>
 
-<h3 id="score"></h3>
+<h4>Matched</h4>
+<div id="matched"></div>
 
-<div class="progress">
-    <div id="barFill"></div>
-</div>
+<h4>Missing</h4>
+<div id="missing"></div>
 
-<p id="roleText"></p>
-
-<h4>ATS Breakdown</h4>
-<p>Skill Match: <span id="skillScore">0%</span></p>
-<p>JD Similarity: <span id="similarityScore">0%</span></p>
-
-<h4>Matched Skills</h4>
-<ul id="matched"></ul>
-
-<h4>Missing Skills</h4>
-<ul id="missing"></ul>
-
-<h4>Suggestions</h4>
-<ul id="suggestions"></ul>
-
-<h4>Feedback</h4>
-<p id="feedback"></p>
+<button onclick="downloadPDF()">Download Report</button>
 
 </div>
 
 <script>
 
-// 🔁 Retry function (Render sleep fix)
-async function retryFetch(url, options, retries = 2) {
-    try {
-        return await fetch(url, options);
-    } catch (err) {
-        if (retries > 0) {
-            await new Promise(r => setTimeout(r, 3000));
-            return retryFetch(url, options, retries - 1);
-        }
-        throw err;
-    }
-}
+const API = "https://resume-ai-htmi.onrender.com";
 
-async function uploadResume() {
+let lastData = null;
 
-    const fileInput = document.getElementById("resume");
+async function analyze() {
+    const file = document.getElementById("resume").files[0];
+    const role = document.getElementById("role").value;
+    const jd = document.getElementById("job_desc").value;
 
-    // ✅ SAFE FIX
-    const roleElement = document.getElementById("roleSelect");
-    const role = roleElement ? roleElement.value : "software";
-
-    const jobDesc = document.getElementById("jobDesc").value;
-
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert("Please select a file");
+    if(!file){
+        alert("Upload file");
         return;
     }
 
-    document.getElementById("score").innerText = "⏳ Waking server...";
+    document.getElementById("status").innerText = "⏳ Analyzing...";
 
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
-    formData.append("job_desc", jobDesc);
+    formData.append("job_desc", jd);
 
-    try {
-
-        const response = await retryFetch("https://resume-ai-htmi.onrender.com/upload", {
-            method: "POST",
-            body: formData
+    try{
+        const res = await fetch(API+"/upload",{
+            method:"POST",
+            body:formData
         });
 
-        const data = await response.json();
+        const data = await res.json();
+        lastData = data;
 
-        // ❌ Handle error
-        if (!data || !data.score) {
-            document.getElementById("score").innerText = "Server Error ❌";
-            return;
-        }
+        document.getElementById("status").innerText = "✅ Done";
 
-        // ✅ UI update
-        document.getElementById("score").innerText = "Score: " + data.score + "%";
-        document.getElementById("roleText").innerText = data.role;
+        document.getElementById("score").innerText = "Score: "+data.score+"%";
+        document.getElementById("skillScore").innerText = "Skill Match: "+data.skill_score+"%";
+        document.getElementById("jdScore").innerText = "JD Similarity: "+data.similarity+"%";
 
-        document.getElementById("barFill").style.width = data.score + "%";
+        document.getElementById("bar").style.width = data.score+"%";
 
-        document.getElementById("matched").innerHTML =
-            data.matched_skills.map(s => `<li>${s}</li>`).join("");
+        document.getElementById("matched").innerText = data.matched.join(", ");
+        document.getElementById("missing").innerText = data.missing.join(", ");
 
-        document.getElementById("missing").innerHTML =
-            data.missing_skills.map(s => `<li>${s}</li>`).join("");
-
-        document.getElementById("suggestions").innerHTML =
-            data.suggestions.map(s => `<li>${s}</li>`).join("");
-
-        document.getElementById("skillScore").innerText =
-            (data.skill_score || 0) + "%";
-
-        document.getElementById("similarityScore").innerText =
-            (data.similarity_score || 0) + "%";
-
-        // 🔥 Feedback logic
-        let feedback = "";
-        if (data.score > 80) feedback = "Excellent Resume 🚀";
-        else if (data.score > 60) feedback = "Good Resume 👍 Improve some skills";
-        else feedback = "Needs Improvement ⚠️ Add missing skills";
-
-        document.getElementById("feedback").innerText = feedback;
-
-    } catch (err) {
-        document.getElementById("score").innerText = "Backend not responding ❌";
+    }catch(e){
+        document.getElementById("status").innerText = "❌ Error";
     }
+}
+
+async function downloadPDF(){
+    if(!lastData){
+        alert("Analyze first");
+        return;
+    }
+
+    const res = await fetch(API+"/download",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(lastData)
+    });
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "report.pdf";
+    a.click();
 }
 
 </script>
