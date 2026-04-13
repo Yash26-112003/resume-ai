@@ -1,123 +1,162 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Resume Analyzer</title>
+<meta charset="UTF-8">
+<title>AI Resume Analyzer</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-        }
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
 
-        .card {
-            backdrop-filter: blur(15px);
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 15px;
-            padding: 25px;
-            width: 380px;
-            margin: 60px auto;
-            color: white;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
+/* Glass Effect */
+.card {
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 30px;
+    width: 350px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
 
-        input, select, textarea {
-            width: 90%;
-            padding: 8px;
-            margin: 8px;
-            border-radius: 8px;
-            border: none;
-        }
+button {
+    background: linear-gradient(90deg,#00c6ff,#0072ff);
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
 
-        button {
-            background: #00c6ff;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-        }
+.progress {
+    width: 100%;
+    background: #ddd;
+    height: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
 
-        #bar {
-            width: 100%;
-            background: rgba(255,255,255,0.3);
-            height: 10px;
-        }
-
-        #barFill {
-            height: 10px;
-            width: 0%;
-            background: green;
-        }
-    </style>
+#barFill {
+    height: 10px;
+    width: 0%;
+    background: green;
+    border-radius: 10px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="card">
-    <h2>🚀 AI Resume Analyzer</h2>
 
-    <select id="roleSelect">
-        <option value="software">Software</option>
-        <option value="data">Data</option>
-        <option value="web">Web</option>
-    </select>
+<h2>🚀 AI Resume Analyzer</h2>
 
-    <input type="file" id="resume">
-    <textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
+<select id="roleSelect">
+    <option value="software">Software</option>
+    <option value="data">Data</option>
+    <option value="web">Web</option>
+</select>
 
-    <button onclick="uploadResume()">Analyze Resume</button>
+<br><br>
 
-    <h3 id="score"></h3>
+<input type="file" id="resume">
 
-    <div id="bar"><div id="barFill"></div></div>
+<br><br>
 
-    <h4 id="roleText"></h4>
+<textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
 
-    <h3>ATS Breakdown</h3>
-    <p>Skill Match: <span id="skillScore"></span>%</p>
-    <p>JD Similarity: <span id="simScore"></span>%</p>
+<br><br>
 
-    <h3>Matched Skills</h3>
-    <ul id="matched"></ul>
+<button onclick="uploadResume()">Analyze Resume</button>
 
-    <h3>Missing Skills</h3>
-    <ul id="missing"></ul>
+<h3 id="score"></h3>
 
-    <h3>Suggestions</h3>
-    <ul id="suggestions"></ul>
+<div class="progress">
+    <div id="barFill"></div>
+</div>
 
-    <h3>Feedback</h3>
-    <p id="feedback"></p>
+<p id="roleText"></p>
+
+<h4>ATS Breakdown</h4>
+<p>Skill Match: <span id="skillScore">0%</span></p>
+<p>JD Similarity: <span id="similarityScore">0%</span></p>
+
+<h4>Matched Skills</h4>
+<ul id="matched"></ul>
+
+<h4>Missing Skills</h4>
+<ul id="missing"></ul>
+
+<h4>Suggestions</h4>
+<ul id="suggestions"></ul>
+
+<h4>Feedback</h4>
+<p id="feedback"></p>
+
 </div>
 
 <script>
+
+// 🔁 Retry function (Render sleep fix)
+async function retryFetch(url, options, retries = 2) {
+    try {
+        return await fetch(url, options);
+    } catch (err) {
+        if (retries > 0) {
+            await new Promise(r => setTimeout(r, 3000));
+            return retryFetch(url, options, retries - 1);
+        }
+        throw err;
+    }
+}
+
 async function uploadResume() {
 
-    const file = document.getElementById("resume").files[0];
-    const role = document.getElementById("roleSelect").value;
+    const fileInput = document.getElementById("resume");
+
+    // ✅ SAFE FIX
+    const roleElement = document.getElementById("roleSelect");
+    const role = roleElement ? roleElement.value : "software";
+
     const jobDesc = document.getElementById("jobDesc").value;
 
+    const file = fileInput.files[0];
+
     if (!file) {
-        alert("Upload resume first");
+        alert("Please select a file");
         return;
     }
+
+    document.getElementById("score").innerText = "⏳ Waking server...";
 
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
     formData.append("job_desc", jobDesc);
 
-    document.getElementById("score").innerText = "Analyzing... ⏳";
-
     try {
-        const res = await fetch("https://resume-ai.onrender.com/upload", {
+
+        const response = await retryFetch("https://resume-ai.onrender.com/upload", {
             method: "POST",
             body: formData
         });
 
-        const data = await res.json();
+        const data = await response.json();
 
+        // ❌ Handle error
+        if (!data || !data.score) {
+            document.getElementById("score").innerText = "Server Error ❌";
+            return;
+        }
+
+        // ✅ UI update
         document.getElementById("score").innerText = "Score: " + data.score + "%";
         document.getElementById("roleText").innerText = data.role;
 
@@ -132,17 +171,25 @@ async function uploadResume() {
         document.getElementById("suggestions").innerHTML =
             data.suggestions.map(s => `<li>${s}</li>`).join("");
 
-        document.getElementById("skillScore").innerText = data.skill_score;
-        document.getElementById("simScore").innerText = data.similarity_score;
+        document.getElementById("skillScore").innerText =
+            (data.skill_score || 0) + "%";
 
-        document.getElementById("feedback").innerText = data.feedback;
+        document.getElementById("similarityScore").innerText =
+            (data.similarity_score || 0) + "%";
+
+        // 🔥 Feedback logic
+        let feedback = "";
+        if (data.score > 80) feedback = "Excellent Resume 🚀";
+        else if (data.score > 60) feedback = "Good Resume 👍 Improve some skills";
+        else feedback = "Needs Improvement ⚠️ Add missing skills";
+
+        document.getElementById("feedback").innerText = feedback;
 
     } catch (err) {
-        console.error(err);
-        document.getElementById("score").innerText =
-            "Waking server... try again in 10 sec ⏳";
+        document.getElementById("score").innerText = "Backend not responding ❌";
     }
 }
+
 </script>
 
 </body>
