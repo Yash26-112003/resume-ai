@@ -140,20 +140,25 @@
 <script>
 async function uploadResume() {
 
-    const file = document.getElementById("resume").files[0];
-    const role = document.getElementById("jobRole").value;
+    const fileInput = document.getElementById("resume");
+    const role = document.getElementById("roleSelect").value;
+    const jobDesc = document.getElementById("jobDesc").value;
+
+    const file = fileInput.files[0];
 
     if (!file) {
-        alert("Please upload a resume");
+        alert("Please select a file");
         return;
     }
 
     const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role);
+    formData.append("job_desc", jobDesc);
 
+    // 🔄 SHOW LOADER
+    document.getElementById("score").innerText = "Analyzing Resume...";
     document.getElementById("loader").style.display = "block";
-    document.getElementById("score").innerText = "";
 
     try {
         const response = await fetch("https://resume-ai-htmi.onrender.com/upload", {
@@ -166,7 +171,9 @@ async function uploadResume() {
         document.getElementById("loader").style.display = "none";
 
         document.getElementById("score").innerText = "Score: " + data.score;
-        document.getElementById("role").innerText = "Role: " + data.role;
+        document.getElementById("roleText").innerText = "Role: " + data.role;
+
+        document.getElementById("barFill").style.width = data.score + "%";
 
         document.getElementById("matched").innerHTML =
             data.matched_skills.map(s => `<span>${s}</span>`).join("");
@@ -174,11 +181,13 @@ async function uploadResume() {
         document.getElementById("missing").innerHTML =
             data.missing_skills.map(s => `<span>${s}</span>`).join("");
 
-        document.getElementById("barFill").style.width = data.score + "%";
+        // ⭐ NEW FEATURE
+        document.getElementById("suggestions").innerHTML =
+            data.suggestions.map(s => `<li>${s}</li>`).join("");
 
-    } catch (error) {
+    } catch (err) {
         document.getElementById("loader").style.display = "none";
-        document.getElementById("score").innerText = "Server error";
+        document.getElementById("score").innerText = "Server Error ❌";
     }
 }
 </script>
