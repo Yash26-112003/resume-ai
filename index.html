@@ -111,7 +111,7 @@ async function uploadResume() {
     document.getElementById("score").innerText = "Analyzing... ⏳";
 
     try {
-        const res = await fetch("https://resume-ai-htmi.onrender.com", {
+        const res = await fetch("https://resume-ai.onrender.com/upload", {
             method: "POST",
             body: formData
         });
