@@ -12,6 +12,8 @@ CORS(app)
 def home():
 return "Backend Running!"
 
+# 📄 Extract text from PDF
+
 def extract_text(file):
 try:
 pdf = PyPDF2.PdfReader(file)
@@ -35,7 +37,7 @@ if not file:
 
 resume_text = extract_text(file)
 
-# 🎯 ROLE BASED SKILLS
+# 🎯 Role-based skills
 if role == "software":
     skills = ["python", "flask", "sql", "api"]
     role_name = "Software Engineer"
@@ -52,18 +54,18 @@ else:
     skills = []
     role_name = "Unknown"
 
-# ✅ MATCHING
+# ✅ Matching
 matched = [s for s in skills if s in resume_text]
 missing = [s for s in skills if s not in resume_text]
 
-# 📊 SIMILARITY
+# 📊 Similarity
 similarity_score = 0
 if job_desc:
-    documents = [resume_text, job_desc]
-    cv = CountVectorizer().fit_transform(documents)
+    docs = [resume_text, job_desc]
+    cv = CountVectorizer().fit_transform(docs)
     similarity_score = cosine_similarity(cv)[0][1]
 
-# 📊 FINAL SCORE
+# 📊 Final Score
 skill_score = (len(matched) / len(skills)) if skills else 0
 final_score = int((skill_score * 0.6 + similarity_score * 0.4) * 100)
 
@@ -82,4 +84,5 @@ return jsonify({
 ```
 
 if **name** == "**main**":
+print("🚀 Backend Starting...")
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
