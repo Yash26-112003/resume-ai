@@ -80,6 +80,6 @@ def upload():
             "skill_score": int(skill_score * 100),
             "similarity_score": int(similarity_score * 100)
         })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+if __name__ == "__main__":
+    print("🚀 Backend Starting...")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
