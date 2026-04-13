@@ -83,7 +83,6 @@ return jsonify({
     "skill_score": int(skill_score * 100),
     "similarity_score": int(similarity_score * 100)
 })
-```
 
 if **name** == "**main**":
 print("🚀 Backend Starting...")
