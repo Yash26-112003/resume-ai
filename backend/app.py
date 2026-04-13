@@ -16,13 +16,16 @@ def home():
 
 def extract_text(file):
     try:
-pdf = PyPDF2.PdfReader(file)
-text = ""
-for page in pdf.pages:
-text += page.extract_text() or ""
-return text.lower()
-except:
-return file.read().decode(errors='ignore').lower()
+        pdf = PyPDF2.PdfReader(file)
+        text = ""
+
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+
+        return text.lower()
+
+    except:
+        return file.read().decode(errors='ignore').lower()
 
 @app.route('/upload', methods=['POST'])
 def upload():
