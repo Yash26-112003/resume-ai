@@ -30,60 +30,56 @@ def extract_text(file):
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-         file = request.files.get('resume')
-         role = request.form.get('role')
-         job_desc = request.form.get('job_desc', "").lower()
+        file = request.files.get('resume')
+        role = request.form.get('role')
+        job_desc = request.form.get('job_desc', "").lower()
 
-if not file:
-    return jsonify({"error": "No file uploaded"}), 400
+        if not file:
+            return jsonify({"error": "No file uploaded"}), 400
 
-resume_text = extract_text(file)
+        resume_text = extract_text(file)
 
-# 🎯 Role-based skills
-if role == "software":
-    skills = ["python", "flask", "sql", "api"]
-    role_name = "Software Engineer"
+        # Role-based skills
+        if role == "software":
+            skills = ["python", "flask", "sql", "api"]
+            role_name = "Software Engineer"
 
-elif role == "data":
-    skills = ["python", "pandas", "machine learning", "numpy"]
-    role_name = "Data Scientist"
+        elif role == "data":
+            skills = ["python", "pandas", "machine learning", "numpy"]
+            role_name = "Data Scientist"
 
-elif role == "web":
-    skills = ["html", "css", "javascript", "react"]
-    role_name = "Web Developer"
+        elif role == "web":
+            skills = ["html", "css", "javascript", "react"]
+            role_name = "Web Developer"
 
-else:
-    skills = []
-    role_name = "Unknown"
+        else:
+            skills = []
+            role_name = "Unknown"
 
-# ✅ Matching
-matched = [s for s in skills if s in resume_text]
-missing = [s for s in skills if s not in resume_text]
+        matched = [s for s in skills if s in resume_text]
+        missing = [s for s in skills if s not in resume_text]
 
-# 📊 Similarity
-similarity_score = 0
-if job_desc:
-    docs = [resume_text, job_desc]
-    cv = CountVectorizer().fit_transform(docs)
-    similarity_score = cosine_similarity(cv)[0][1]
+        similarity_score = 0
+        if job_desc:
+            docs = [resume_text, job_desc]
+            cv = CountVectorizer().fit_transform(docs)
+            similarity_score = cosine_similarity(cv)[0][1]
 
-# 📊 Final Score
-skill_score = (len(matched) / len(skills)) if skills else 0
-final_score = int((skill_score * 0.6 + similarity_score * 0.4) * 100)
+        skill_score = (len(matched) / len(skills)) if skills else 0
+        final_score = int((skill_score * 0.6 + similarity_score * 0.4) * 100)
 
-suggestions = [f"Learn {s}" for s in missing]
+        suggestions = [f"Learn {s}" for s in missing]
 
-return jsonify({
-    "role": role_name,
-    "score": final_score,
-    "matched_skills": matched,
-    "missing_skills": missing,
-    "similarity": round(similarity_score * 100, 2),
-    "suggestions": suggestions,
-    "skill_score": int(skill_score * 100),
-    "similarity_score": int(similarity_score * 100)
-})
+        return jsonify({
+            "role": role_name,
+            "score": final_score,
+            "matched_skills": matched,
+            "missing_skills": missing,
+            "similarity": round(similarity_score * 100, 2),
+            "suggestions": suggestions,
+            "skill_score": int(skill_score * 100),
+            "similarity_score": int(similarity_score * 100)
+        })
 
-if __name__ == "__main__":
-print("🚀 Backend Starting...")
-app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
