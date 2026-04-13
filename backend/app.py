@@ -15,7 +15,7 @@ def home():
 # 📄 Extract text from PDF
 
 def extract_text(file):
-try:
+    try:
 pdf = PyPDF2.PdfReader(file)
 text = ""
 for page in pdf.pages:
@@ -26,11 +26,10 @@ return file.read().decode(errors='ignore').lower()
 
 @app.route('/upload', methods=['POST'])
 def upload():
-
-```
-file = request.files.get('resume')
-role = request.form.get('role')
-job_desc = request.form.get('job_desc', "").lower()
+    try:
+         file = request.files.get('resume')
+         role = request.form.get('role')
+         job_desc = request.form.get('job_desc', "").lower()
 
 if not file:
     return jsonify({"error": "No file uploaded"}), 400
