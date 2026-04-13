@@ -84,6 +84,6 @@ return jsonify({
     "similarity_score": int(similarity_score * 100)
 })
 
-if **name** == "**main**":
+if __name__ == "__main__":
 print("🚀 Backend Starting...")
 app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
