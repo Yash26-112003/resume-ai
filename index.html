@@ -6,50 +6,85 @@
 <style>
 body {
     margin:0;
-    font-family: Arial;
-    background: linear-gradient(135deg,#6a11cb,#2575fc);
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#667eea,#764ba2);
     height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
 }
 
+/* GLASS CARD */
 .container {
-    backdrop-filter: blur(20px);
-    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(25px);
+    background: rgba(255,255,255,0.15);
     padding:30px;
     border-radius:20px;
-    width:350px;
+    width:380px;
     text-align:center;
     color:white;
     box-shadow:0 8px 32px rgba(0,0,0,0.3);
+    transition:0.3s;
 }
 
-input,select,textarea,button {
+.container:hover {
+    transform: scale(1.02);
+}
+
+/* INPUTS */
+input,select,textarea {
     width:100%;
-    margin:10px 0;
     padding:10px;
+    margin:8px 0;
     border-radius:10px;
     border:none;
 }
 
+/* BUTTON */
 button {
-    background:#00c6ff;
+    background: linear-gradient(45deg,#00c6ff,#0072ff);
     color:white;
+    border:none;
+    padding:12px;
+    width:100%;
+    border-radius:10px;
     cursor:pointer;
+    transition:0.3s;
 }
 
+button:hover {
+    opacity:0.8;
+}
+
+/* STATUS */
+#status {
+    font-weight:bold;
+    margin:10px;
+}
+
+/* PROGRESS */
 .progress {
-    height:10px;
-    background:#ccc;
+    height:12px;
+    background:#ddd;
     border-radius:10px;
     overflow:hidden;
+    margin:15px 0;
 }
 
 .bar {
     height:100%;
     width:0%;
     background:lime;
+    transition: width 1s ease;
+}
+
+/* SECTIONS */
+.section {
+    margin-top:15px;
+}
+
+h4 {
+    margin-bottom:5px;
 }
 
 </style>
@@ -68,25 +103,40 @@ button {
 </select>
 
 <input type="file" id="resume">
+
 <textarea id="job_desc" placeholder="Paste Job Description"></textarea>
 
-<button onclick="analyze()">Analyze</button>
+<button onclick="analyze()">Analyze Resume</button>
 
-<h3 id="status"></h3>
+<p id="status"></p>
 
-<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="progress">
+<div class="bar" id="bar"></div>
+</div>
 
-<p id="score"></p>
+<h3 id="score"></h3>
+
+<div class="section">
 <p id="skillScore"></p>
 <p id="jdScore"></p>
+</div>
 
-<h4>Matched</h4>
+<div class="section">
+<h4>✅ Matched Skills</h4>
 <div id="matched"></div>
+</div>
 
-<h4>Missing</h4>
+<div class="section">
+<h4>❌ Missing Skills</h4>
 <div id="missing"></div>
+</div>
 
-<button onclick="downloadPDF()">Download Report</button>
+<div class="section">
+<h4>💡 Suggestions</h4>
+<div id="suggestions"></div>
+</div>
+
+<button onclick="downloadPDF()">📄 Download Report</button>
 
 </div>
 
@@ -96,17 +146,28 @@ const API = "https://resume-ai-htmi.onrender.com";
 
 let lastData = null;
 
-async function analyze() {
+/* 🔁 Retry for Render cold start */
+async function retryFetch(url, options, retries=3){
+    try{
+        return await fetch(url, options);
+    }catch(e){
+        if(retries===0) throw e;
+        await new Promise(r=>setTimeout(r,3000));
+        return retryFetch(url, options, retries-1);
+    }
+}
+
+async function analyze(){
     const file = document.getElementById("resume").files[0];
     const role = document.getElementById("role").value;
     const jd = document.getElementById("job_desc").value;
 
     if(!file){
-        alert("Upload file");
+        alert("Upload resume");
         return;
     }
 
-    document.getElementById("status").innerText = "⏳ Analyzing...";
+    document.getElementById("status").innerText = "⏳ Waking server...";
 
     const formData = new FormData();
     formData.append("resume", file);
@@ -114,7 +175,7 @@ async function analyze() {
     formData.append("job_desc", jd);
 
     try{
-        const res = await fetch(API+"/upload",{
+        const res = await retryFetch(API+"/upload",{
             method:"POST",
             body:formData
         });
@@ -122,7 +183,11 @@ async function analyze() {
         const data = await res.json();
         lastData = data;
 
-        document.getElementById("status").innerText = "✅ Done";
+        if(data.error){
+            throw new Error(data.error);
+        }
+
+        document.getElementById("status").innerText = "✅ Analysis Complete";
 
         document.getElementById("score").innerText = "Score: "+data.score+"%";
         document.getElementById("skillScore").innerText = "Skill Match: "+data.skill_score+"%";
@@ -132,9 +197,11 @@ async function analyze() {
 
         document.getElementById("matched").innerText = data.matched.join(", ");
         document.getElementById("missing").innerText = data.missing.join(", ");
+        document.getElementById("suggestions").innerText = data.suggestions.join(", ");
 
     }catch(e){
-        document.getElementById("status").innerText = "❌ Error";
+        document.getElementById("status").innerText = "❌ Backend not responding";
+        console.error(e);
     }
 }
 
@@ -147,11 +214,11 @@ async function downloadPDF(){
     const res = await fetch(API+"/download",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(lastData)
+        body:JSON.stringify(lastData)
     });
 
     const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
     a.href = url;
