@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <title>AI Resume Analyzer</title>
 
 <style>
 body {
     font-family: Arial;
     background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #333;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,79 +16,72 @@ body {
     background: white;
     padding: 25px;
     border-radius: 12px;
-    width: 380px;
+    width: 400px;
     text-align: center;
 }
 button {
-    padding: 10px 20px;
+    padding: 10px;
     background: #667eea;
     color: white;
     border: none;
-    border-radius: 6px;
-    cursor: pointer;
 }
 .progress {
     background: #eee;
-    height: 12px;
-    border-radius: 10px;
-    margin-top: 10px;
+    height: 10px;
 }
 .progress-bar {
-    height: 12px;
-    background: #4caf50;
+    background: green;
+    height: 10px;
     width: 0%;
-    border-radius: 10px;
 }
 .loader {
     display: none;
-    margin: 10px;
 }
 </style>
+
 </head>
 
 <body>
 
 <div class="container">
-    <h2>🚀 AI Resume Analyzer</h2>
+<h2>🚀 AI Resume Analyzer</h2>
 
-    <select id="roleSelect">
-        <option value="software">Software Engineer</option>
-        <option value="data">Data Scientist</option>
-        <option value="web">Web Developer</option>
-    </select>
+<select id="roleSelect">
+<option value="software">Software</option>
+<option value="data">Data</option>
+<option value="web">Web</option>
+</select>
 
-    <br><br>
+<br><br>
 
-    <input type="file" id="resume">
+<input type="file" id="resume">
 
-    <br><br>
+<br><br>
 
-    <textarea id="jobDesc" placeholder="Paste Job Description..." rows="3"></textarea>
+<textarea id="jobDesc" placeholder="Paste Job Description"></textarea>
 
-    <br><br>
+<br><br>
 
-    <button onclick="uploadResume()">Analyze Resume</button>
+<button onclick="uploadResume()">Analyze Resume</button>
 
-    <div class="loader" id="loader">🔄 Analyzing...</div>
+<div id="loader">🔄 Loading...</div>
 
-    <h3 id="score">Score: -</h3>
-    <div class="progress">
-        <div id="barFill" class="progress-bar"></div>
-    </div>
+<h3 id="score"></h3>
 
-    <p id="roleText"></p>
+<div class="progress">
+<div id="barFill" class="progress-bar"></div>
+</div>
 
-    <h4>✅ Matched Skills</h4>
-    <div id="matched"></div>
+<p id="roleText"></p>
 
-    <h4>❌ Missing Skills</h4>
-    <div id="missing"></div>
+<h4>Matched</h4>
+<div id="matched"></div>
 
-    <h4>📊 ATS Breakdown</h4>
-    <p id="breakdown"></p>
+<h4>Missing</h4>
+<div id="missing"></div>
 
-    <h4>💡 Suggestions</h4>
-    <div id="suggestions"></div>
+<h4>Feedback</h4>
+<div id="feedback"></div>
 
 </div>
 
@@ -98,22 +89,16 @@ button {
 
 async function uploadResume() {
 
-    const fileInput = document.getElementById("resume");
-
-    const roleElement = document.getElementById("roleSelect");
-    const role = roleElement ? roleElement.value : "software";
-
+    const file = document.getElementById("resume").files[0];
+    const role = document.getElementById("roleSelect").value;
     const jobDesc = document.getElementById("jobDesc").value;
 
-    const file = fileInput.files[0];
-
     if (!file) {
-        alert("Please select a file");
+        alert("Select file");
         return;
     }
 
     document.getElementById("loader").style.display = "block";
-    document.getElementById("score").innerText = "Analyzing...";
 
     const formData = new FormData();
     formData.append("resume", file);
@@ -121,35 +106,31 @@ async function uploadResume() {
     formData.append("job_desc", jobDesc);
 
     try {
-        const response = await fetch("https://resume-ai-htmi.onrender.com/upload", {
+        const res = await fetch("https://resume-ai-htmi.onrender.com/upload", {
             method: "POST",
             body: formData
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
         document.getElementById("loader").style.display = "none";
 
         document.getElementById("score").innerText = "Score: " + data.score + "%";
-        document.getElementById("roleText").innerText = "Role: " + data.role;
+        document.getElementById("roleText").innerText = data.role;
 
         document.getElementById("barFill").style.width = data.score + "%";
 
         document.getElementById("matched").innerHTML =
-            data.matched_skills.map(s => "✅ " + s).join("<br>");
+            data.matched_skills.join("<br>");
 
         document.getElementById("missing").innerHTML =
-            data.missing_skills.map(s => "❌ " + s).join("<br>");
+            data.missing_skills.join("<br>");
 
-        document.getElementById("suggestions").innerHTML =
-            data.suggestions.map(s => "💡 " + s).join("<br>");
+        document.getElementById("feedback").innerHTML =
+            data.feedback.join("<br>");
 
-        document.getElementById("breakdown").innerText =
-            "Skill Score: " + data.skill_score + "% | Similarity: " + data.similarity_score + "%";
-
-    } catch (err) {
-        document.getElementById("loader").style.display = "none";
-        document.getElementById("score").innerText = "Server Error ❌";
+    } catch {
+        alert("Server error");
     }
 }
 
