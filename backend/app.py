@@ -30,10 +30,9 @@ def upload():
     if not file:
         return jsonify({"error": "No file uploaded"}), 400
 
-    # 📄 Extract text
-    resume_text = extract_text(file)
+    resume_text = file.read().decode(errors='ignore').lower()
 
-    # 🎯 Role-based skills
+    # ROLE LOGIC
     if role == "software":
         skills = ["python", "flask", "sql", "api"]
         role_name = "Software Engineer"
@@ -50,47 +49,40 @@ def upload():
         skills = []
         role_name = "Unknown"
 
-    # ✅ Skill matching
+    # MATCHING
     matched = [s for s in skills if s in resume_text]
     missing = [s for s in skills if s not in resume_text]
 
-    # 🧠 Similarity
+    skill_score = (len(matched) / len(skills)) if skills else 0
+
+    # SIMILARITY
     similarity_score = 0
     if job_desc:
+        from sklearn.feature_extraction.text import CountVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
         documents = [resume_text, job_desc.lower()]
         cv = CountVectorizer().fit_transform(documents)
         similarity_score = cosine_similarity(cv)[0][1]
 
-    # 📊 Score
-    skill_score = (len(matched) / len(skills)) if skills else 0
     final_score = int((skill_score * 0.6 + similarity_score * 0.4) * 100)
 
-    # 💡 Suggestions
-   suggestions = []
+    # SUGGESTIONS
+    suggestions = []
+    for s in missing:
+        suggestions.append(f"Learn {s}")
 
-if missing:
-    suggestions.append("Improve missing technical skills")
-
-for s in missing:
-    suggestions.append(f"Add {s} projects to your resume")
-
-if similarity_score < 0.5:
-    suggestions.append("Resume not aligned with job description")
-
-if final_score < 50:
-    suggestions.append("Add more relevant experience and keywords")
-
-   return jsonify({
-    "role": role_name,
-    "score": final_score,
-    "matched_skills": matched,
-    "missing_skills": missing,
-    "similarity": round(similarity_score * 100, 2),
-    "suggestions": suggestions,
-    "skill_score": int(skill_score * 100),
-    "similarity_score": int(similarity_score * 100)
-})
-
+    # ✅ FINAL RESPONSE (ONLY ONE RETURN)
+    return jsonify({
+        "role": role_name,
+        "score": final_score,
+        "matched_skills": matched,
+        "missing_skills": missing,
+        "similarity": round(similarity_score * 100, 2),
+        "suggestions": suggestions,
+        "skill_score": int(skill_score * 100),
+        "similarity_score": int(similarity_score * 100)
+    })
 # ✅ IMPORTANT for Render
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
