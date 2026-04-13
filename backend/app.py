@@ -113,7 +113,6 @@ def upload():
 if __name__ == '__main__':
     app.run(debug=True)
     if 'resume' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
 
     return jsonify({
         "score": 90,
