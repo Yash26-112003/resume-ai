@@ -1,1 +1,28 @@
+<h2>Dashboard</h2>
 
+<button onclick="goAnalyzer()">Analyze Resume</button>
+
+<div id="list"></div>
+
+<script>
+const API = "https://resume-ai-htmi.onrender.com";
+const email = localStorage.getItem("user");
+
+function goAnalyzer(){
+    location.href="analyzer.html";
+}
+
+fetch(API+"/dashboard",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({email})
+})
+.then(r=>r.json())
+.then(data=>{
+    let html="";
+    data.forEach(r=>{
+        html+=`<p>Score: ${r.score}%</p>`;
+    });
+    document.getElementById("list").innerHTML=html;
+});
+</script>
