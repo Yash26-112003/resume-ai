@@ -3,4 +3,3 @@ flask-cors
 PyPDF2
 scikit-learn
 fpdf
-gunicorn
