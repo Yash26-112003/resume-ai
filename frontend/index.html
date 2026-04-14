@@ -1,1 +1,37 @@
+<h2>Login / Signup</h2>
 
+<input id="email" placeholder="Email">
+<input id="pass" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+<button onclick="signup()">Signup</button>
+
+<script>
+const API = "https://resume-ai-htmi.onrender.com";
+
+function login(){
+    fetch(API+"/login",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email:email.value,password:pass.value})
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.error) alert(d.error);
+        else{
+            localStorage.setItem("user", email.value);
+            location.href="dashboard.html";
+        }
+    });
+}
+
+function signup(){
+    fetch(API+"/signup",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email:email.value,password:pass.value})
+    })
+    .then(r=>r.json())
+    .then(d=>alert(d.msg||d.error));
+}
+</script>
