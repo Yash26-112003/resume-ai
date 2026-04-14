@@ -1,1 +1,55 @@
+<h2>Resume Analyzer</h2>
 
+<select id="role">
+<option value="software">Software</option>
+<option value="data">Data</option>
+<option value="web">Web</option>
+</select>
+
+<input type="file" id="resume">
+<textarea id="jd" placeholder="Job Description"></textarea>
+
+<button onclick="analyze()">Analyze</button>
+
+<h3 id="score"></h3>
+
+<button onclick="downloadPDF()">Download PDF</button>
+
+<script>
+const API = "https://resume-ai-htmi.onrender.com";
+const email = localStorage.getItem("user");
+
+let lastData=null;
+
+async function analyze(){
+    const file = resume.files[0];
+    const formData = new FormData();
+
+    formData.append("resume", file);
+    formData.append("role", role.value);
+    formData.append("job_desc", jd.value);
+    formData.append("email", email);
+
+    const res = await fetch(API+"/upload",{method:"POST",body:formData});
+    const data = await res.json();
+
+    lastData=data;
+    score.innerText="Score: "+data.score+"%";
+}
+
+async function downloadPDF(){
+    const res = await fetch(API+"/download",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(lastData)
+    });
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="report.pdf";
+    a.click();
+}
+</script>
