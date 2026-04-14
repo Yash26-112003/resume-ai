@@ -1,4 +1,12 @@
-<h2>Resume Analyzer</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI Resume Analyzer</title>
+</head>
+
+<body>
+
+<h2>AI Resume Analyzer</h2>
 
 <select id="role">
 <option value="software">Software</option>
@@ -6,10 +14,17 @@
 <option value="web">Web</option>
 </select>
 
-<input type="file" id="resume">
-<textarea id="jd" placeholder="Job Description"></textarea>
+<br><br>
 
-<button onclick="analyze()">Analyze</button>
+<input type="file" id="resume">
+
+<br><br>
+
+<textarea id="jd" placeholder="Paste Job Description"></textarea>
+
+<br><br>
+
+<button onclick="analyze()">Analyze Resume</button>
 
 <h3 id="score"></h3>
 
@@ -19,37 +34,73 @@
 const API = "https://resume-ai-htmi.onrender.com";
 const email = localStorage.getItem("user");
 
-let lastData=null;
+let lastData = null;
 
 async function analyze(){
-    const file = resume.files[0];
-    const formData = new FormData();
+    const file = document.getElementById("resume").files[0];
 
+    if(!file){
+        alert("Upload resume");
+        return;
+    }
+
+    document.getElementById("score").innerText = "⏳ Processing...";
+
+    const formData = new FormData();
     formData.append("resume", file);
     formData.append("role", role.value);
     formData.append("job_desc", jd.value);
     formData.append("email", email);
 
-    const res = await fetch(API+"/upload",{method:"POST",body:formData});
-    const data = await res.json();
+    try{
+        const res = await fetch(API + "/upload", {
+            method:"POST",
+            body:formData
+        });
 
-    lastData=data;
-    score.innerText="Score: "+data.score+"%";
+        const data = await res.json();
+
+        if(data.error){
+            score.innerText = "❌ Error";
+            return;
+        }
+
+        lastData = data;
+
+        score.innerText = "Score: " + data.score + "%";
+
+    }catch{
+        score.innerText = "Server not responding ❌";
+    }
 }
 
 async function downloadPDF(){
-    const res = await fetch(API+"/download",{
+    if(!lastData){
+        alert("Analyze first");
+        return;
+    }
+
+    const res = await fetch(API + "/download", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(lastData)
     });
 
     const blob = await res.blob();
+
+    if(blob.size === 0){
+        alert("PDF failed ❌");
+        return;
+    }
+
     const url = URL.createObjectURL(blob);
 
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="report.pdf";
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "report.pdf";
     a.click();
 }
 </script>
+
+</body>
+</html>
