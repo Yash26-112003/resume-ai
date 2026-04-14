@@ -12,7 +12,7 @@ CORS(app)
 USER_DB = "users.json"
 REPORT_DIR = "reports"
 
-# Create files if not exist
+# Create folders/files
 if not os.path.exists(REPORT_DIR):
     os.makedirs(REPORT_DIR)
 
@@ -130,28 +130,40 @@ def dashboard():
     users = json.load(open(USER_DB))
     return jsonify(users.get(email, {}).get("reports", []))
 
-# ---------------- PDF ----------------
+# ---------------- PDF DOWNLOAD ----------------
 @app.route("/download", methods=["POST"])
 def download():
-    data = request.json
+    try:
+        data = request.json
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
 
-    pdf.cell(200, 10, "AI Resume Report", ln=True)
-    pdf.cell(200, 10, f"Score: {data['score']}%", ln=True)
+        pdf.cell(200, 10, "AI Resume Report", ln=True)
+        pdf.cell(200, 10, f"Score: {data.get('score',0)}%", ln=True)
+        pdf.cell(200, 10, f"Skill Score: {data.get('skill_score',0)}%", ln=True)
+        pdf.cell(200, 10, f"JD Similarity: {data.get('similarity',0)}%", ln=True)
 
-    pdf.cell(200, 10, "Matched Skills:", ln=True)
-    pdf.multi_cell(0, 10, ", ".join(data["matched"]))
+        pdf.ln(5)
 
-    pdf.cell(200, 10, "Missing Skills:", ln=True)
-    pdf.multi_cell(0, 10, ", ".join(data["missing"]))
+        pdf.cell(200, 10, "Matched Skills:", ln=True)
+        pdf.multi_cell(0, 10, ", ".join(data.get("matched", [])))
 
-    path = f"{REPORT_DIR}/{uuid.uuid4()}.pdf"
-    pdf.output(path)
+        pdf.ln(5)
 
-    return send_file(path, as_attachment=True)
+        pdf.cell(200, 10, "Missing Skills:", ln=True)
+        pdf.multi_cell(0, 10, ", ".join(data.get("missing", [])))
+
+        filename = f"report_{uuid.uuid4()}.pdf"
+        filepath = os.path.join(REPORT_DIR, filename)
+
+        pdf.output(filepath)
+
+        return send_file(filepath, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
