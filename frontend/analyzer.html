@@ -2,11 +2,61 @@
 <html>
 <head>
 <title>AI Resume Analyzer</title>
+
+<style>
+body{
+    margin:0;
+    font-family:sans-serif;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    width:400px;
+    padding:30px;
+    border-radius:20px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    color:white;
+}
+
+input, select, textarea{
+    width:100%;
+    margin:10px 0;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background: linear-gradient(45deg,#00c6ff,#0072ff);
+    color:white;
+    cursor:pointer;
+}
+
+.bar{
+    height:6px;
+    background:white;
+    width:0%;
+    transition:1s;
+    border-radius:10px;
+}
+</style>
 </head>
 
 <body>
 
-<h2>AI Resume Analyzer</h2>
+<div class="card">
+
+<h2>🚀 AI Resume Analyzer</h2>
 
 <select id="role">
 <option value="software">Software</option>
@@ -14,85 +64,68 @@
 <option value="web">Web</option>
 </select>
 
-<br><br>
-
 <input type="file" id="resume">
-
-<br><br>
 
 <textarea id="jd" placeholder="Paste Job Description"></textarea>
 
-<br><br>
+<button onclick="analyze()">Analyze</button>
 
-<button onclick="analyze()">Analyze Resume</button>
+<div class="bar" id="bar"></div>
 
 <h3 id="score"></h3>
+<p id="ai"></p>
 
 <button onclick="downloadPDF()">Download PDF</button>
 
+</div>
+
 <script>
 const API = "https://resume-ai-htmi.onrender.com";
-const email = localStorage.getItem("user");
 
 let lastData = null;
 
 async function analyze(){
-    const file = document.getElementById("resume").files[0];
+    const file = resume.files[0];
+    if(!file) return alert("Upload resume");
 
-    if(!file){
-        alert("Upload resume");
-        return;
-    }
+    bar.style.width="30%";
 
-    document.getElementById("score").innerText = "⏳ Processing...";
-
-    const formData = new FormData();
-    formData.append("resume", file);
-    formData.append("role", role.value);
-    formData.append("job_desc", jd.value);
-    formData.append("email", email);
+    const form = new FormData();
+    form.append("resume", file);
+    form.append("role", role.value);
+    form.append("job_desc", jd.value);
 
     try{
-        const res = await fetch(API + "/upload", {
-            method:"POST",
-            body:formData
-        });
-
+        const res = await fetch(API+"/upload",{method:"POST", body:form});
         const data = await res.json();
 
         if(data.error){
-            score.innerText = "❌ Error";
+            score.innerText="Error ❌";
             return;
         }
 
         lastData = data;
 
-        score.innerText = "Score: " + data.score + "%";
+        score.innerText = "Score: "+data.score+"%";
+        ai.innerText = data.ai_feedback;
+
+        bar.style.width="100%";
 
     }catch{
-        score.innerText = "Server not responding ❌";
+        score.innerText="Server Error ❌";
     }
 }
 
 async function downloadPDF(){
-    if(!lastData){
-        alert("Analyze first");
-        return;
-    }
+    if(!lastData) return alert("Analyze first");
 
-    const res = await fetch(API + "/download", {
+    const res = await fetch(API+"/download",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(lastData)
     });
 
     const blob = await res.blob();
-
-    if(blob.size === 0){
-        alert("PDF failed ❌");
-        return;
-    }
-
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
