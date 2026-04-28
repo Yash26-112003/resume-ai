@@ -7,7 +7,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from fpdf import FPDF
 
 app = Flask(__name__)
-CORS(app)
+
+# ✅ FIXED CORS
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 USERS_FILE = "users.json"
 
@@ -17,15 +19,22 @@ if not os.path.exists(USERS_FILE):
         json.dump({}, f)
 
 def load_users():
-    return json.load(open(USERS_FILE))
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
 
 def save_users(data):
-    json.dump(data, open(USERS_FILE, "w"))
+    with open(USERS_FILE, "w") as f:
+        json.dump(data, f)
 
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
     return "🚀 SaaS Backend Running!"
+
+# ---------------- TEST ROUTE ----------------
+@app.route("/test")
+def test():
+    return jsonify({"status": "Backend working ✅"})
 
 # ---------------- REGISTER ----------------
 @app.route("/register", methods=["POST"])
@@ -61,12 +70,14 @@ def login():
 # ---------------- TEXT EXTRACT ----------------
 def extract_text(file):
     try:
+        file.seek(0)
         pdf = PyPDF2.PdfReader(file)
         text = ""
         for page in pdf.pages:
             text += page.extract_text() or ""
         return text.lower()
     except:
+        file.seek(0)
         return file.read().decode(errors="ignore").lower()
 
 # ---------------- AI FEEDBACK ----------------
@@ -83,15 +94,18 @@ def generate_ai_feedback(score, missing):
 def upload():
     try:
         file = request.files.get("resume")
-        role = request.form.get("role")
+        role = request.form.get("role", "").lower()
         job_desc = request.form.get("job_desc", "").lower()
         email = request.form.get("email")
 
+        print("📥 Upload request received")
+
         if not file:
-            return jsonify({"error": "No file"}), 400
+            return jsonify({"error": "No file uploaded"}), 400
 
         resume_text = extract_text(file)
 
+        # ✅ ROLE SKILLS
         skills_map = {
             "software": ["python","flask","sql","api"],
             "data": ["python","pandas","machine learning","numpy"],
@@ -103,13 +117,15 @@ def upload():
         matched = [s for s in skills if s in resume_text]
         missing = [s for s in skills if s not in resume_text]
 
+        # ✅ SIMILARITY
         similarity = 0
-        if job_desc:
+        if job_desc.strip():
             docs = [resume_text, job_desc]
             cv = CountVectorizer().fit_transform(docs)
             similarity = cosine_similarity(cv)[0][1]
 
-        skill_score = len(matched)/len(skills) if skills else 0
+        # ✅ SCORE
+        skill_score = len(matched)/len(skills) if len(skills) > 0 else 0
         final_score = int((skill_score*0.6 + similarity*0.4)*100)
 
         ai_feedback = generate_ai_feedback(final_score, missing)
@@ -123,7 +139,7 @@ def upload():
             "ai_feedback": ai_feedback
         }
 
-        # SAVE REPORT
+        # ✅ SAVE REPORT
         if email:
             users = load_users()
             if email in users:
@@ -133,6 +149,7 @@ def upload():
         return jsonify(result)
 
     except Exception as e:
+        print("❌ ERROR:", str(e))
         return jsonify({"error": str(e)}), 500
 
 # ---------------- GET REPORTS ----------------
@@ -145,34 +162,38 @@ def get_reports():
         return jsonify(users[email]["reports"])
     return jsonify([])
 
-# ---------------- PDF ----------------
+# ---------------- PDF DOWNLOAD ----------------
 @app.route("/download", methods=["POST"])
 def download():
-    data = request.json
+    try:
+        data = request.json
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
 
-    pdf.cell(200,10,"AI Resume Report", ln=True)
-    pdf.cell(200,10,f"Score: {data['score']}%", ln=True)
+        pdf.cell(200,10,"AI Resume Report", ln=True)
+        pdf.cell(200,10,f"Score: {data['score']}%", ln=True)
 
-    pdf.cell(200,10,"Matched Skills:", ln=True)
-    for s in data["matched"]:
-        pdf.cell(200,10,f"- {s}", ln=True)
+        pdf.cell(200,10,"Matched Skills:", ln=True)
+        for s in data["matched"]:
+            pdf.cell(200,10,f"- {s}", ln=True)
 
-    pdf.cell(200,10,"Missing Skills:", ln=True)
-    for s in data["missing"]:
-        pdf.cell(200,10,f"- {s}", ln=True)
+        pdf.cell(200,10,"Missing Skills:", ln=True)
+        for s in data["missing"]:
+            pdf.cell(200,10,f"- {s}", ln=True)
 
-    pdf.multi_cell(0,10,"AI Feedback: "+data["ai_feedback"])
+        pdf.multi_cell(0,10,"AI Feedback: "+data["ai_feedback"])
 
-    filename = f"report_{uuid.uuid4()}.pdf"
-    pdf.output(filename)
+        filename = f"report_{uuid.uuid4()}.pdf"
+        pdf.output(filename)
 
-    return send_file(filename, as_attachment=True)
+        return send_file(filename, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT",10000))
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)
